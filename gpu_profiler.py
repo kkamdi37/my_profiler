@@ -2,6 +2,7 @@
 
 import sys
 import json
+import datetime
 import xmltodict
 import subprocess
 
@@ -12,11 +13,21 @@ def run_command( command ):
 
 def main():
     command = ['nvidia-smi', '--xml-format', '--query']
+    nv_dt_format = "%a %b %d %H:%M:%S %Y"
+
+
     bresult = run_command( command )
     str_result = bresult.decode( 'utf-8' )
-    result = xmltodict.parse( str_result )
+    xml_result = xmltodict.parse( str_result )
+    result = xml_result["nvidia_smi_log"]
+    gpu_info = result["gpu"]
 
-    print( json.dumps(result, sort_keys=True, indent=4) )
+    ts = datetime.datetime.strptime( result["timestamp"], nv_dt_format )
+
+    for i in range( len(gpu_info) ):
+        print( gpu_info[i]["@id"], gpu_info[i]["utilization"], gpu_info[i]["processes"] )
+
+    #print( json.dumps(result, sort_keys=True, indent=4) )
 
     return 0
 

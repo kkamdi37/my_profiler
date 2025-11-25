@@ -27,34 +27,45 @@ def main():
 
     time.sleep( interval - time.time() % interval )
 
-	while Loop:
+    while Loop:
         bresult = run_command( command )
-	    xml_result = xmltodict.parse( bresult.decode( 'utf-8' ) )
+        xml_result = xmltodict.parse( bresult.decode( 'utf-8' ) )
 
-	    result = xml_result["nvidia_smi_log"]
- 	    gpu_info = result["gpu"]
-  	    ts = datetime.datetime.strptime( result["timestamp"], nv_dt_fmt )
-	    #print( json.dumps(result, sort_keys=True, indent=4) )
+        result = xml_result["nvidia_smi_log"]
+        gpu_info = result["gpu"]
+        ts = datetime.datetime.strptime( result["timestamp"], nv_dt_fmt )
+        #print( json.dumps(result, sort_keys=True, indent=4) )
 
-		gpu_table = list()
-	    gpu_table.append( ["@id", "gpu_ut", "mem_ut", "pid", "used_mem"] )
+        gpu_table = list()
+        gpu_table.append( ["@id", "gpu_ut", "mem_ut", "pid", "used_mem"] )
 
- 	    for i in range( len(gpu_info) ):
-        	#print( gpu_info[i]["@id"], gpu_info[i]["utilization"], gpu_info[i]["processes"] )
+        for i in range( len(gpu_info) ):
+            #print( gpu_info[i]["@id"], gpu_info[i]["utilization"], gpu_info[i]["processes"] )
 
-			tmp = list()
-	        tmp.append( gpu_info[i]["@id"] )
-	        tmp.append( gpu_info[i]["utilization"]["gpu_util"] )
-	        tmp.append( gpu_info[i]["utilization"]["memory_util"] )
-	        tmp.append( gpu_info[i]["processes"]["process_info"]["pid"] )
-	        tmp.append( gpu_info[i]["processes"]["process_info"]["used_memory"] )
-	        gpu_table.append( tmp )
+            tmp = list()
+            tmp.append( gpu_info[i]["@id"] )
+            tmp.append( gpu_info[i]["utilization"]["gpu_util"] )
+            tmp.append( gpu_info[i]["utilization"]["memory_util"] )
 
-		print( "\n - Datetime: " + ts.strftime("%Y-%m-%d %H:%M:%S") )
+            type_gpu_proc_info = type(gpu_info[i]["processes"]["process_info"])
+            if type_gpu_proc_info is dict:
+                tmp.append( gpu_info[i]["processes"]["process_info"]["pid"] )
+                tmp.append( gpu_info[i]["processes"]["process_info"]["used_memory"] )
+            elif type_gpu_proc_info is list:
+                gi_pid_list = list()
+                gi_usedmem_list = list()
+                for gi in gpu_info[i]["processes"]["process_info"]:
+                    if not gi["pid"] in gi_pid_list:
+                        gi_pid_list.append(gi["pid"])
+                        gi_usedmem_list.append(gi["used_memory"])
+                tmp.append( ','.join(gi_pid_list) )
+                tmp.append( ','.join(gi_usedmem_list) )
+            gpu_table.append( tmp )
+
+        print( "\n - Datetime: " + ts.strftime("%Y-%m-%d %H:%M:%S") )
         print_tabulate( gpu_table )
-		print()
 
-		time.sleep( interval - time.time() % interval)
+        time.sleep( interval - time.time() % interval)
 
     return 0
 

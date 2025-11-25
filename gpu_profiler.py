@@ -54,7 +54,7 @@ def main():
         print_tabulate( gpu_table )
 		print()
 
-		time.slepp( interval - time.time() % interval)
+		time.sleep( interval - time.time() % interval)
 
     return 0
 
